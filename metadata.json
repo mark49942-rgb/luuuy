@@ -1,0 +1,6 @@
+{
+  "name": "Luuuy - Smart Energy Life",
+  "description": "A luxury Zen-inspired body and mental energy management app featuring energy state scanning, AI-guided schedule optimization, daily stress analytics, and personal profile tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
