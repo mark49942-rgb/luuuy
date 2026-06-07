@@ -13,21 +13,23 @@ import {
   Play,
   RotateCcw
 } from "lucide-react";
-import { TimelineItem } from "../types";
+import { TimelineItem, ScanResult } from "../types";
 
 interface TimelineViewProps {
   timelineItems: TimelineItem[];
   onAddTimelineItem: (item: TimelineItem) => void;
   onNavigateToTab: (tab: string) => void;
+  scanResult?: ScanResult;
 }
 
 export default function TimelineView({
   timelineItems,
   onAddTimelineItem,
   onNavigateToTab,
+  scanResult,
 }: TimelineViewProps) {
-  // Real live countdown state! Starting at 102 seconds (1m 42s)
-  const [timeLeft, setTimeLeft] = useState(102);
+  // Real live countdown state! Starting at 30 minutes (1800 seconds) if tomorrow's plan is applied
+  const [timeLeft, setTimeLeft] = useState(scanResult?.applied ? 1800 : 102);
   const [isRunning, setIsRunning] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -36,6 +38,15 @@ export default function TimelineView({
   const [newTime, setNewTime] = useState("14:00 - 15:00");
   const [newDesc, setNewDesc] = useState("");
   const [newTag, setNewTag] = useState("");
+
+  // Sync timeLeft automatically when tomorrow's plan is applied
+  useEffect(() => {
+    if (scanResult?.applied) {
+      setTimeLeft(1800);
+    } else {
+      setTimeLeft(102);
+    }
+  }, [scanResult?.applied]);
 
   // Decrement seconds
   useEffect(() => {
@@ -117,7 +128,7 @@ export default function TimelineView({
           </div>
 
           <p className="text-xs text-on-surface-variant font-medium font-sans mb-1">
-            目前進行中：深層工作
+            {scanResult?.applied ? "明日智能專注黃金期 (AI引導)" : "目前進行中：深層工作"}
           </p>
 
           <div className="flex items-center justify-between">
@@ -143,7 +154,7 @@ export default function TimelineView({
                 )}
               </button>
               <button
-                onClick={() => setTimeLeft(102)}
+                onClick={() => setTimeLeft(scanResult?.applied ? 1800 : 102)}
                 className="p-2 bg-neutral-100 hover:bg-neutral-200/60 rounded-full cursor-pointer flex items-center justify-center transition-all"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -156,7 +167,7 @@ export default function TimelineView({
             <motion.div
               layout
               className="h-full bg-primary"
-              animate={{ width: `${(timeLeft / 102) * 100}%` }}
+              animate={{ width: `${(timeLeft / (scanResult?.applied ? 1800 : 102)) * 100}%` }}
               transition={{ ease: "linear" }}
             />
           </div>
@@ -170,7 +181,7 @@ export default function TimelineView({
             時間軸排程
           </h3>
           <p className="text-xs text-on-surface-variant font-sans mt-0.5">
-            2026年5月31日，星期日
+            {scanResult?.applied ? "2026年6月8日，星期一 (明日排程已智慧套用)" : "2026年6月7日，星期日 (今日體徵已同步)"}
           </p>
         </div>
         <button

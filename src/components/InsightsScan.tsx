@@ -30,14 +30,46 @@ export default function InsightsScan({
   onUpdateScanResult,
   onNavigateToTab,
 }: InsightsScanProps) {
-  const [energyLevel, setEnergyLevel] = useState(scanResult.energyValue || 3);
+  // Luyuy 5-Question Daily Energy checkup
+  const [q1, setQ1] = useState<number>(scanResult.answers?.q1 || 3);
+  const [q2, setQ2] = useState<number>(scanResult.answers?.q2 || 3);
+  const [q3, setQ3] = useState<number>(scanResult.answers?.q3 || 3);
+  const [q4, setQ4] = useState<number>(scanResult.answers?.q4 || 3);
+  const [q5, setQ5] = useState<number>(scanResult.answers?.q5 || 3);
+
   const [isScanning, setIsScanning] = useState(false);
   const [showRecommendation, setShowRecommendation] = useState(!!scanResult.aiRecommendation);
   const [isRecommendationApplied, setIsRecommendationApplied] = useState(!!scanResult.applied);
 
-  // Dynamic values depending on slider
-  const stressMapping = [0, 85, 65, 45, 30, 15]; // tiredness level 1 has high stress, 5 has lower stress
-  const stressValue = stressMapping[energyLevel];
+  // Live Score Calculator
+  const totalScore = q1 + q2 + q3 + q4 + q5;
+  
+  let statusLabel = "🟢 穩定模式";
+  let focusTime = 50;
+  let energyLevel = 3;
+  let stressValue = 35;
+
+  if (totalScore <= 10) {
+    statusLabel = "🔴 能量枯竭";
+    focusTime = 25;
+    energyLevel = 1;
+    stressValue = 85;
+  } else if (totalScore <= 15) {
+    statusLabel = "🟠 恢復模式";
+    focusTime = 40;
+    energyLevel = 2;
+    stressValue = 65;
+  } else if (totalScore <= 20) {
+    statusLabel = "🟢 穩定模式";
+    focusTime = 50;
+    energyLevel = 4;
+    stressValue = 30;
+  } else {
+    statusLabel = "🔵 高效模式";
+    focusTime = 90;
+    energyLevel = 5;
+    stressValue = 15;
+  }
 
   // Map energy to background colors
   const gradientStyles = [
@@ -52,11 +84,11 @@ export default function InsightsScan({
   // Dynamic advice texts in case Gemini API is offline
   const localRecommendations = [
     "",
-    "今日能量偏低。強烈建議在 15:00 安排 20 分鐘午休，暫停重度決策，優先補充電解質與進行溫和的正念步行拉伸。",
-    "能量處於平穩修復期。建議於 13:30 進行身心靜止冥想，並於 15:00 後搭配中等強度的團隊溝通任務。",
-    "能量平衡且健康。明日的最佳專注黃金時段在 10:00，適合開展高階創意構思、專案系統架構及策略分析排程。",
-    "精力和专注度旺盛。建議把握 14:00 之前的高峰時段攻克高難度和棘手研究論文，晚間可縮短恢復拉伸時長。",
-    "能量充沛到巔峰！建議在 11:00 挑戰最有挑戰性的新項目。注意下午 16:30 稍微進行呼吸調息，避免因亢奮影響睡眠。"
+    "今日能量偏低。強烈建議在 15:00 安排 20 分鐘午休，暫停繁重的工作決策，優先補充水分並進行溫和的正念伸展。",
+    "能量處於平穩修復期。建議於 13:30 進行短暫的閉目養神，並於 15:00 後安排適度的小組日常溝通任務。",
+    "能量平衡且健康。明日的最佳專注時段在 10:00，適合整理核心資料、撰寫報告大綱以及安排讀書進度。",
+    "精神和專注度很棒！建議把握 14:00 之前的高峰時段，專心處理比較繁重或需要思考的研究與報告，晚間可縮短拉伸休整時長。",
+    "能量非常充沛！建議在 11:00 處理比較有挑戰性的新事。注意下午 16:30 稍微進行呼吸調息，放慢腳步避免太晚入睡。"
   ];
 
   const wakeupTimes = ["", "08:00", "07:45", "07:15", "06:45", "06:15"];
@@ -70,7 +102,11 @@ export default function InsightsScan({
       const response = await fetch("/api/generate-insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ energy: energyLevel, stress: stressValue }),
+        body: JSON.stringify({ 
+          energy: energyLevel, 
+          stress: stressValue,
+          answers: { q1, q2, q3, q4, q5, totalScore, statusLabel, focusTime }
+        }),
       });
       const data = await response.json();
       
@@ -81,7 +117,8 @@ export default function InsightsScan({
           aiRecommendation: data.recommendation,
           wakeupTime: data.wakeupTime || wakeupTimes[energyLevel],
           peakHourRange: data.peakHour || peakHours[energyLevel],
-          applied: false
+          applied: false,
+          answers: { q1, q2, q3, q4, q5, totalScore, statusLabel, focusTime }
         });
       } else {
         throw new Error("No payload");
@@ -89,13 +126,26 @@ export default function InsightsScan({
     } catch (err) {
       // Fallback
       setTimeout(() => {
+        let categoryAdvice = "";
+        if (totalScore <= 10) {
+          categoryAdvice = "目前能量偏低，不宜安排繁重工作。建議今天提早休息，暫時遠離電子螢幕，讓身體和腦袋好好修補一下。";
+        } else if (totalScore <= 15) {
+          categoryAdvice = "身心處於調整恢復期。今天安排兩三個核心任務就好，專注在簡報修改或日常紀錄，晚點可以去外面慢走或散步，釋放一點壓力。";
+        } else if (totalScore <= 20) {
+          categoryAdvice = "狀態非常好！明天可以完成三到五個常規的學習或撰寫，像是整理簡報或完成心得紀錄，每次專心處理約 50 分鐘，效率會很棒哦。";
+        } else {
+          categoryAdvice = "能量非常棒！今天最適合整理專案的核心架構，或是專注完成比較深度的研究，單次推薦專注 90 分鐘，能一口氣理清許多思緒哦。";
+        }
+        const customizedAdvice = `【Luuuy體徵檢測：身體能量得分 ${totalScore} 分 ─ 當前契合 ${statusLabel}】${categoryAdvice}`;
+
         onUpdateScanResult({
           energyValue: energyLevel,
           stressIndex: stressValue,
-          aiRecommendation: localRecommendations[energyLevel],
+          aiRecommendation: customizedAdvice,
           wakeupTime: wakeupTimes[energyLevel],
           peakHourRange: peakHours[energyLevel],
-          applied: false
+          applied: false,
+          answers: { q1, q2, q3, q4, q5, totalScore, statusLabel, focusTime }
         });
       }, 1500);
     } finally {
@@ -112,7 +162,8 @@ export default function InsightsScan({
       ...scanResult,
       applied: true
     });
-    alert("規劃成功！明日黃金專注計畫已同步加載至您的時間軸排程。");
+    // Directly navigate/jump to timeline tab
+    onNavigateToTab("timeline");
   };
 
   return (
@@ -170,122 +221,218 @@ export default function InsightsScan({
                 </p>
               </section>
 
-              {/* Slider Energy block */}
-              <section className="bg-white/80 backdrop-blur-lg rounded-3xl p-6 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60">
-                <label className="text-sm font-bold font-display text-primary block mb-4">
-                  你現在的能量儲備狀態如何？
-                </label>
-
-                {/* Emoji indicator */}
-                <div className="flex justify-center mb-6 h-20 items-center">
-                  <motion.div
-                    key={energyLevel}
-                    initial={{ scale: 0.8, rotate: -5 }}
-                    animate={{ scale: 1.15, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    {energyLevel <= 2 ? (
-                      <BatteryLow className="w-16 h-16 text-[#484263] stroke-[1.5]" />
-                    ) : energyLevel === 3 ? (
-                      <BatteryMedium className="w-16 h-16 text-[#2c2745] stroke-[1.5]" />
-                    ) : (
-                      <Battery className="w-16 h-16 text-primary stroke-[1.5]" />
-                    )}
-                  </motion.div>
+              {/* Live Status Tracker Header */}
+              <section className="bg-white/80 backdrop-blur-lg rounded-3xl p-5 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-on-surface-variant font-sans uppercase tracking-widest">
+                    Luuuy 每日能量檢測
+                  </h3>
+                  <p className="font-extrabold text-base text-primary font-display mt-0.5">
+                    當前總分：{totalScore} 分 / 25
+                  </p>
                 </div>
-
-                <div className="flex justify-between px-1 mb-2 text-[10px] font-sans font-bold text-on-surface-variant uppercase tracking-wider">
-                  <span>疲憊沉重</span>
-                  <span>精力充沛</span>
-                </div>
-
-                {/* Range Slider */}
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  step="1"
-                  value={energyLevel}
-                  onChange={(e) => setEnergyLevel(parseInt(e.target.value))}
-                  className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer focus:outline-none accent-primary"
-                  style={{
-                    background: "linear-gradient(to right, #cac1e8, #d0e8e1, #d2e8db, #ffdad6)",
-                  }}
-                />
-
-                {/* Text mood description list */}
-                <div className="flex justify-between mt-4 text-xs font-sans text-neutral-400 font-bold px-1 select-none">
-                  <span
-                    onClick={() => setEnergyLevel(1)}
-                    className={`cursor-pointer ${energyLevel === 1 ? "text-primary font-bold scale-110" : "opacity-40"}`}
-                  >
-                    疲憊 (1)
-                  </span>
-                  <span
-                    onClick={() => setEnergyLevel(2)}
-                    className={`cursor-pointer ${energyLevel === 2 ? "text-primary font-bold scale-110" : "opacity-40"}`}
-                  >
-                    偏低 (2)
-                  </span>
-                  <span
-                    onClick={() => setEnergyLevel(3)}
-                    className={`cursor-pointer ${energyLevel === 3 ? "text-primary font-bold scale-110" : "opacity-40"}`}
-                  >
-                    平衡 (3)
-                  </span>
-                  <span
-                    onClick={() => setEnergyLevel(4)}
-                    className={`cursor-pointer ${energyLevel === 4 ? "text-primary font-bold scale-110" : "opacity-40"}`}
-                  >
-                    高昂 (4)
-                  </span>
-                  <span
-                    onClick={() => setEnergyLevel(5)}
-                    className={`cursor-pointer ${energyLevel === 5 ? "text-primary font-bold scale-110" : "opacity-40"}`}
-                  >
-                    充沛 (5)
-                  </span>
+                <div className="flex flex-col items-end shrink-0 bg-[#d2e8db] text-[#384b42] px-3.5 py-1.5 rounded-full font-semibold text-xs border border-[#b4ccc5]">
+                  <span>{statusLabel}</span>
                 </div>
               </section>
 
-              {/* Stress Index Segment */}
-              <section className="bg-white/90 backdrop-blur-lg rounded-3xl p-6 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-sm font-display text-primary">
-                    今日綜合壓力估算
-                  </h3>
-                  <span className="font-sans font-bold text-xl text-primary">
-                    {stressValue}%
+              {/* Q1. 心情 */}
+              <section className="bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold font-sans bg-primary/10 text-primary px-3 py-1 rounded-full">
+                    問題 Q1
+                  </span>
+                  <span className="text-xs font-bold font-mono text-primary bg-neutral-100 px-2 py-0.5 rounded-md">
+                    評分 {q1}
                   </span>
                 </div>
-
-                {/* Animated column bars */}
-                <div className="relative w-full h-20 flex items-end justify-between gap-1 overflow-hidden px-1 mb-4 select-none">
-                  {[12, 24, 45, 60, 35, 80, 50, 65, 20, 10].map((h, i) => {
-                    // Adapt columns based on energy level
-                    const adaptedHeight = i === 5 ? stressValue : Math.max(10, Math.min(95, h + (energyLevel * 3) - 10));
-
-                    return (
-                      <motion.div
-                        key={i}
-                        animate={{ height: `${adaptedHeight}%` }}
-                        className="flex-1 rounded-t-sm transition-all duration-300"
-                        style={{
-                          backgroundColor:
-                            i === 5
-                              ? "var(--color-primary)"
-                              : "var(--color-accent)",
-                        }}
-                      />
-                    );
-                  })}
+                <h4 className="font-bold text-sm text-primary font-sans leading-snug">
+                  Q1. 今天的整體心情如何？
+                </h4>
+                <div className="grid grid-cols-5 gap-1 mt-1">
+                  {[
+                    { score: 1, emoji: "😭", text: "非常糟糕" },
+                    { score: 2, emoji: "😞", text: "不太好" },
+                    { score: 3, emoji: "😐", text: "普通" },
+                    { score: 4, emoji: "🙂", text: "不錯" },
+                    { score: 5, emoji: "😆", text: "非常好" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.score}
+                      type="button"
+                      onClick={() => setQ1(opt.score)}
+                      className={`flex flex-col items-center justify-center py-2 px-0.5 rounded-xl border text-center transition-all cursor-pointer h-16 ${
+                        q1 === opt.score
+                          ? "bg-primary text-white border-primary shadow-sm scale-102"
+                          : "bg-neutral-50/50 hover:bg-neutral-100/60 border-black/5 text-[#55695f]"
+                      }`}
+                    >
+                      <span className="text-base mb-0.5">{opt.emoji}</span>
+                      <span className="text-[8.5px] font-sans font-bold leading-tight line-clamp-1 truncate select-none">
+                        {opt.text}
+                      </span>
+                    </button>
+                  ))}
                 </div>
+              </section>
 
-                <div className="p-3 bg-neutral-100 rounded-xl flex items-start gap-2.5">
-                  <Info className="w-4.5 h-4.5 text-secondary shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-on-surface-variant leading-snug">
-                    該指數根據心率變異度 (HRV)、睡眠潛伏期與近期體能消耗數據自動估算。
-                  </p>
+              {/* Q2. 疲勞 */}
+              <section className="bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold font-sans bg-primary/10 text-primary px-3 py-1 rounded-full">
+                    問題 Q2
+                  </span>
+                  <span className="text-xs font-bold font-mono text-primary bg-neutral-100 px-2 py-0.5 rounded-md">
+                    評分 {q2}
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm text-primary font-sans leading-snug">
+                  Q2. 今天的身體疲勞程度？
+                </h4>
+                <div className="grid grid-cols-5 gap-1 mt-1">
+                  {[
+                    { score: 1, emoji: "🪫", text: "累到不想動" },
+                    { score: 2, emoji: "🥱", text: "很疲勞" },
+                    { score: 3, emoji: "😐", text: "普通" },
+                    { score: 4, emoji: "🔋", text: "有精神" },
+                    { score: 5, emoji: "⚡", text: "精力充沛" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.score}
+                      type="button"
+                      onClick={() => setQ2(opt.score)}
+                      className={`flex flex-col items-center justify-center py-2 px-0.5 rounded-xl border text-center transition-all cursor-pointer h-16 ${
+                        q2 === opt.score
+                          ? "bg-primary text-white border-primary shadow-sm scale-102"
+                          : "bg-neutral-50/50 hover:bg-neutral-100/60 border-black/5 text-[#55695f]"
+                      }`}
+                    >
+                      <span className="text-base mb-0.5">{opt.emoji}</span>
+                      <span className="text-[8.5px] font-sans font-bold leading-tight line-clamp-1 truncate select-none">
+                        {opt.text}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Q3. 壓力 */}
+              <section className="bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold font-sans bg-primary/10 text-primary px-3 py-1 rounded-full">
+                    問題 Q3
+                  </span>
+                  <span className="text-xs font-bold font-mono text-primary bg-neutral-100 px-2 py-0.5 rounded-md">
+                    評分 {q3}
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm text-primary font-sans leading-snug">
+                  Q3. 今天的壓力程度？
+                </h4>
+                <div className="grid grid-cols-5 gap-1 mt-1">
+                  {[
+                    { score: 1, emoji: "🤯", text: "壓力爆表" },
+                    { score: 2, emoji: "😰", text: "很有壓力" },
+                    { score: 3, emoji: "😐", text: "普通" },
+                    { score: 4, emoji: "🧘", text: "壓力不大" },
+                    { score: 5, emoji: "🍃", text: "非常輕鬆" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.score}
+                      type="button"
+                      onClick={() => setQ3(opt.score)}
+                      className={`flex flex-col items-center justify-center py-2 px-0.5 rounded-xl border text-center transition-all cursor-pointer h-16 ${
+                        q3 === opt.score
+                          ? "bg-primary text-white border-primary shadow-sm scale-102"
+                          : "bg-neutral-50/50 hover:bg-neutral-100/60 border-black/5 text-[#55695f]"
+                      }`}
+                    >
+                      <span className="text-base mb-0.5">{opt.emoji}</span>
+                      <span className="text-[8.5px] font-sans font-bold leading-tight line-clamp-1 truncate select-none">
+                        {opt.text}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Q4. 成就感 */}
+              <section className="bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold font-sans bg-primary/10 text-primary px-3 py-1 rounded-full">
+                    問題 Q4
+                  </span>
+                  <span className="text-xs font-bold font-mono text-primary bg-neutral-100 px-2 py-0.5 rounded-md">
+                    評分 {q4}
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm text-primary font-sans leading-snug">
+                  Q4. 今天完成事情後的成就感？
+                </h4>
+                <div className="grid grid-cols-5 gap-1 mt-1">
+                  {[
+                    { score: 1, emoji: "🤷", text: "幾乎沒有" },
+                    { score: 2, emoji: "📉", text: "很少" },
+                    { score: 3, emoji: "😐", text: "普通" },
+                    { score: 4, emoji: "📈", text: "不錯" },
+                    { score: 5, emoji: "🏆", text: "非常有成就" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.score}
+                      type="button"
+                      onClick={() => setQ4(opt.score)}
+                      className={`flex flex-col items-center justify-center py-2 px-0.5 rounded-xl border text-center transition-all cursor-pointer h-16 ${
+                        q4 === opt.score
+                          ? "bg-primary text-white border-primary shadow-sm scale-102"
+                          : "bg-neutral-50/50 hover:bg-neutral-100/60 border-black/5 text-[#55695f]"
+                      }`}
+                    >
+                      <span className="text-base mb-0.5">{opt.emoji}</span>
+                      <span className="text-[8.5px] font-sans font-bold leading-tight line-clamp-1 truncate select-none">
+                        {opt.text}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Q5. 明日期待 */}
+              <section className="bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-[0_4px_24px_rgba(5,26,23,0.03)] border border-white/60 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold font-sans bg-primary/10 text-primary px-3 py-1 rounded-full">
+                    問題 Q5
+                  </span>
+                  <span className="text-xs font-bold font-mono text-primary bg-neutral-100 px-2 py-0.5 rounded-md">
+                    評分 {q5}
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm text-primary font-sans leading-snug">
+                  Q5. 你對明天的期待程度？
+                </h4>
+                <div className="grid grid-cols-5 gap-1 mt-1">
+                  {[
+                    { score: 1, emoji: "🥀", text: "完全不期待" },
+                    { score: 2, emoji: "🤦", text: "有點排斥" },
+                    { score: 3, emoji: "😐", text: "普通" },
+                    { score: 4, emoji: "🌱", text: "有點期待" },
+                    { score: 5, emoji: "✨", text: "很期待" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.score}
+                      type="button"
+                      onClick={() => setQ5(opt.score)}
+                      className={`flex flex-col items-center justify-center py-2 px-0.5 rounded-xl border text-center transition-all cursor-pointer h-16 ${
+                        q5 === opt.score
+                          ? "bg-primary text-white border-primary shadow-sm scale-102"
+                          : "bg-neutral-50/50 hover:bg-neutral-100/60 border-black/5 text-[#55695f]"
+                      }`}
+                    >
+                      <span className="text-base mb-0.5">{opt.emoji}</span>
+                      <span className="text-[8.5px] font-sans font-bold leading-tight line-clamp-1 truncate select-none">
+                        {opt.text}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </section>
 

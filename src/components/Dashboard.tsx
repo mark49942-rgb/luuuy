@@ -16,18 +16,31 @@ import {
   BookOpen,
   X
 } from "lucide-react";
-import { Task } from "../types";
+import { Task, ScanResult } from "../types";
 
 interface DashboardProps {
   tasks: Task[];
   onToggleTask: (id: string) => void;
   onNavigateToTab: (tab: string) => void;
+  scanResult?: ScanResult;
 }
 
-export default function Dashboard({ tasks, onToggleTask, onNavigateToTab }: DashboardProps) {
+export default function Dashboard({ tasks, onToggleTask, onNavigateToTab, scanResult }: DashboardProps) {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showVaultModal, setShowVaultModal] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
+
+  const score = scanResult?.answers?.totalScore;
+  const energyPercent = score ? Math.round((score / 25) * 100) : 82;
+  const modeLabel = scanResult?.answers?.statusLabel || "🟢 穩定模式";
+  
+  let greetingDesc = "根據晨間掃描，您的能量儲備正處於良好狀態。";
+  if (score !== undefined) {
+    if (score <= 10) greetingDesc = "感應到您的能量嚴重枯竭，今日請盡量低能耗運轉，開啟主動放空與睡眠修護。";
+    else if (score <= 15) greetingDesc = "您的身體處於需要休養恢復的階段，請配合適度運動並避免過度排滿任務。";
+    else if (score <= 20) greetingDesc = "您的狀態良好、神采奕奕，適合按部就班高效拓展常規創意與學習工作。";
+    else greetingDesc = "您的能量非常充沛、狀態很好，適合處理比較需要思考的專案或核心任務！";
+  }
 
   // Filter tasks to show top 3
   const activeTasks = tasks.slice(0, 3);
@@ -67,8 +80,8 @@ export default function Dashboard({ tasks, onToggleTask, onNavigateToTab }: Dash
         <h2 className="text-3xl font-extrabold font-display text-primary leading-tight tracking-tight">
           早安，陳先生
         </h2>
-        <p className="text-sm text-on-surface-variant">
-          根據晨間掃描，您的能量儲備正處於巔峰狀態。
+        <p className="text-sm text-on-surface-variant leading-relaxed pr-2">
+          {greetingDesc}
         </p>
       </section>
 
@@ -101,14 +114,14 @@ export default function Dashboard({ tasks, onToggleTask, onNavigateToTab }: Dash
                 strokeWidth="7"
                 strokeDasharray="477.52"
                 initial={{ strokeDashoffset: 477.52 }}
-                animate={{ strokeDashoffset: 477.52 - (477.52 * 82) / 100 }}
+                animate={{ strokeDashoffset: 477.52 - (477.52 * energyPercent) / 100 }}
                 transition={{ duration: 1.5, ease: "easeOut" }}
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute flex flex-col items-center">
               <span className="font-sans font-bold text-4xl text-primary leading-none">
-                82
+                {energyPercent}
               </span>
               <span className="text-[10px] text-on-surface-variant font-semibold tracking-widest mt-1">
                 PERCENT
@@ -120,9 +133,9 @@ export default function Dashboard({ tasks, onToggleTask, onNavigateToTab }: Dash
             <span className="text-base font-bold text-primary font-display">
               今日能量儲備
             </span>
-            <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-[#d2e8db] text-[#384b42] font-semibold rounded-full text-xs font-sans">
+            <span className="inline-flex items-center gap-1 mt-2 px-3.5 py-1.5 bg-[#d2e8db] text-[#384b42] font-semibold rounded-full text-xs font-sans">
               <Zap className="w-3.5 h-3.5 fill-current text-primary" />
-              高效率模式
+              {modeLabel}
             </span>
           </div>
         </div>

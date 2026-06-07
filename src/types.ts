@@ -26,4 +26,17 @@ export interface ScanResult {
   wakeupTime?: string;
   peakHourRange?: string;
   applied?: boolean;
+  answers?: {
+    mindState?: string;
+    tensionSource?: string;
+    tomorrowFocus?: string;
+    q1?: number;
+    q2?: number;
+    q3?: number;
+    q4?: number;
+    q5?: number;
+    totalScore?: number;
+    statusLabel?: string;
+    focusTime?: number;
+  };
 }

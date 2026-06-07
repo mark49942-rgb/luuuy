@@ -14,28 +14,28 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: "task-1",
-      title: "深度研究：AI 模型優化論文",
+      title: "完成專題架構",
       duration: 90,
       timeLabel: "10:00",
       completed: false,
-      notes: "建議於 10:00 能量高峰期開始",
+      notes: "整理章節與流程",
       isSpecial: true,
     },
     {
       id: "task-2",
-      title: "團隊週會資料準備",
-      duration: 45,
+      title: "修改簡報內容",
+      duration: 60,
       timeLabel: "14:00",
       completed: false,
-      notes: "預計 14:00 進行",
+      notes: "補上設計心理學重點",
     },
     {
       id: "task-3",
-      title: "冥想與能量恢復",
-      duration: 15,
-      timeLabel: "下午",
+      title: "整理訪談紀錄",
+      duration: 45,
+      timeLabel: "16:30",
       completed: false,
-      notes: "建議在午餐後進行",
+      notes: "萃取使用者痛點",
     },
   ]);
 
@@ -43,31 +43,39 @@ export default function App() {
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([
     {
       id: "t-1",
-      timeRange: "08:00 - 09:00",
-      title: "晨間冥想與早餐",
+      timeRange: "07:00 - 08:00",
+      title: "晨間整理",
       completed: true,
+      description: "喝水、早餐、確認今天狀態",
     },
     {
       id: "t-2",
-      timeRange: "09:00 - 11:30",
-      title: "深層工作：專案策略",
+      timeRange: "10:00 - 12:00",
+      title: "專注任務：完成專題架構",
       completed: false,
       isFocusMode: true,
-      description: "排除所有干擾，專注於核心系統架構設計。目前的能量水平：高度集中。",
+      description: "適合處理需要思考的內容，先完成最重要的部分。",
     },
     {
       id: "t-3",
-      timeRange: "11:30 - 12:00",
-      title: "正念步行與伸展",
+      timeRange: "14:00 - 15:30",
+      title: "修改簡報內容",
       completed: false,
-      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBByFUSZkY7RpLLZTWG3LFqsx2O_kzSuTKIagBDGRRzo7kuYsCtOl44WxK93RoEpH4OFtYIwAPiyEe35HVFWK2GBKgigukVUg9zMVws1wAAFQaYbhisX0zbu6I2cwEZMCmsdJnKwQRWvgXTPVmTY35SGj6xdgIDPeWIwLfepvhgKeiD9a-Fh_MY5PXYKSqMPKXLbBfU0BmYj-7Z_R407T4JLuwWjNgUvALZAr6zZMsWeDEaU7SpCjz4mFm9OGtGBKa7PfOplDf7Hd8",
+      description: "調整頁面順序，補上設計心理學說明。",
     },
     {
       id: "t-4",
-      timeRange: "12:00 - 13:30",
-      title: "團隊協作會議",
+      timeRange: "16:00 - 16:30",
+      title: "休息與伸展",
       completed: false,
-      tags: ["會議記錄", "準備提案"],
+      description: "離開螢幕，讓大腦恢復。",
+    },
+    {
+      id: "t-5",
+      timeRange: "20:30 - 21:00",
+      title: "夜間回顧",
+      completed: false,
+      description: "記錄今天完成的事，安排明天重點。",
     },
   ]);
 
@@ -91,20 +99,279 @@ export default function App() {
 
   const handleUpdateScanResult = (result: ScanResult) => {
     setScanResult(result);
-    // If recommendation is applied, insert also inside timelineItems dynamically!
+    // If recommendation is applied, insert also inside timelineItems dynamically and jump page!
     if (result.applied) {
-      const isAlreadyInTimeline = timelineItems.some((item) => item.title.includes("明日智慧創意"));
-      if (!isAlreadyInTimeline) {
-        setTimelineItems((prev) => [
-          ...prev,
+      setActiveTab("timeline");
+
+      const score = result.answers?.totalScore || 18;
+
+      if (score <= 10) {
+        setTasks([
           {
-            id: `apply-ai-${Date.now()}`,
-            timeRange: result.peakHourRange || "10:00 - 11:30",
-            title: "明日智慧創意工作 (AI建議)",
+            id: "task-ai-1",
+            title: "整理筆記",
+            duration: 25,
+            timeLabel: "09:00",
+            completed: false,
+            notes: "低難度工作，輕鬆梳理思緒（25分鐘專注）",
+          },
+          {
+            id: "task-ai-2",
+            title: "回覆訊息",
+            duration: 25,
+            timeLabel: "10:00",
+            completed: false,
+            notes: "快速回覆日常簡單訊息（25分鐘專注）",
+          }
+        ]);
+
+        setTimelineItems([
+          {
+            id: "apply-ai-1",
+            timeRange: "09:00 - 09:25",
+            title: "專注任務：整理筆記",
             completed: false,
             isFocusMode: true,
-            description: result.aiRecommendation,
+            description: "低能量模式：專注 25 分鐘，休息 10 分鐘，不給大腦過多壓力。",
           },
+          {
+            id: "apply-ai-2",
+            timeRange: "10:00 - 10:25",
+            title: "專注任務：回覆訊息",
+            completed: false,
+            isFocusMode: true,
+            description: "低難度常規聯絡：專注 25 分鐘，完成後放空休息 10 分鐘。",
+          },
+          {
+            id: "apply-ai-3",
+            timeRange: "14:00 - 14:30",
+            title: "散步與放鬆",
+            completed: false,
+            description: "以恢復狀態為主：離開螢幕放空 30 分鐘，舒緩大腦壓力。",
+          },
+          {
+            id: "apply-ai-4",
+            timeRange: "20:00 - 20:20",
+            title: "夜間回顧",
+            completed: false,
+            description: "溫和回顧今天：記錄心情狀態，提早準備休息。",
+          }
+        ]);
+      } else if (score <= 15) {
+        setTasks([
+          {
+            id: "task-ai-1",
+            title: "修改報告",
+            duration: 40,
+            timeLabel: "09:00",
+            completed: false,
+            notes: "中低難度工作（40分鐘專注）",
+          },
+          {
+            id: "task-ai-2",
+            title: "資料蒐集",
+            duration: 40,
+            timeLabel: "11:00",
+            completed: false,
+            notes: "中低難度工作（40分鐘專注）",
+          },
+          {
+            id: "task-ai-3",
+            title: "低強度運動",
+            duration: 30,
+            timeLabel: "15:00",
+            completed: false,
+            notes: "出門散步慢走，活動活絡身體",
+          }
+        ]);
+
+        setTimelineItems([
+          {
+            id: "apply-ai-1",
+            timeRange: "09:00 - 09:40",
+            title: "專注任務：修改報告",
+            completed: false,
+            isFocusMode: true,
+            description: "恢復模式：專注 40 分鐘，休息 10 分鐘。輕度動腦逐步推進項目。",
+          },
+          {
+            id: "apply-ai-2",
+            timeRange: "11:00 - 11:40",
+            title: "專注任務：資料蒐集",
+            completed: false,
+            isFocusMode: true,
+            description: "中低難度資料蒐集：工作 40 分鐘，隨後休息 10 分鐘。",
+          },
+          {
+            id: "apply-ai-3",
+            timeRange: "15:00 - 15:30",
+            title: "運動與拉伸",
+            completed: false,
+            description: "活動關節、呼吸新鮮空氣，釋放身體疲勞。",
+          },
+          {
+            id: "apply-ai-4",
+            timeRange: "20:30 - 20:50",
+            title: "夜間回顧",
+            completed: false,
+            description: "快速紀錄本日收穫，輕柔調息準備入睡。",
+          }
+        ]);
+      } else if (score <= 20) {
+        setTasks([
+          {
+            id: "task-ai-1",
+            title: "完成專題",
+            duration: 50,
+            timeLabel: "09:00",
+            completed: false,
+            notes: "正常學習工作。撰寫章節框架（50分鐘專注）",
+            isSpecial: true,
+          },
+          {
+            id: "task-ai-2",
+            title: "簡報設計",
+            duration: 50,
+            timeLabel: "11:00",
+            completed: false,
+            notes: "正常學習工作。設計排版視覺（50分鐘專注）",
+          },
+          {
+            id: "task-ai-3",
+            title: "資料整理",
+            duration: 50,
+            timeLabel: "14:00",
+            completed: false,
+            notes: "正常學習工作。分析並歸類訪談數據（50分鐘專注）",
+          },
+          {
+            id: "task-ai-4",
+            title: "閱讀文獻",
+            duration: 50,
+            timeLabel: "16:00",
+            completed: false,
+            notes: "正常學習工作。研讀領域相關文獻（50分鐘專注）",
+          }
+        ]);
+
+        setTimelineItems([
+          {
+            id: "apply-ai-1",
+            timeRange: "09:00 - 09:50",
+            title: "專注任務：完成專題",
+            completed: false,
+            isFocusMode: true,
+            description: "穩定模式：專注 50 分鐘，休息 10 分鐘。狀態平穩高效推進。",
+          },
+          {
+            id: "apply-ai-2",
+            timeRange: "11:00 - 11:50",
+            title: "專注任務：簡報設計",
+            completed: false,
+            isFocusMode: true,
+            description: "正常常規工作：專注 50 分鐘，調整畫面並美化結構。",
+          },
+          {
+            id: "apply-ai-3",
+            timeRange: "14:00 - 14:50",
+            title: "專注任務：資料整理",
+            completed: false,
+            isFocusMode: true,
+            description: "正常學習：專注 50 分鐘，休息 10 分鐘。抽絲剝繭理清架構。",
+          },
+          {
+            id: "apply-ai-4",
+            timeRange: "16:00 - 16:50",
+            title: "專注任務：閱讀文獻",
+            completed: false,
+            isFocusMode: true,
+            description: "正常工作：專注 50 分鐘，休息 10 分鐘。吸收前人研究精華。",
+          },
+          {
+            id: "apply-ai-5",
+            timeRange: "20:30 - 21:00",
+            title: "一日工作回顧",
+            completed: false,
+            description: "登錄今日實踐成果，完成一天收尾，享受完全放鬆。",
+          }
+        ]);
+      } else {
+        setTasks([
+          {
+            id: "task-ai-1",
+            title: "完成專題核心內容",
+            duration: 90,
+            timeLabel: "09:00",
+            completed: false,
+            notes: "優先安排高難度工作（90分鐘深度專注）",
+            isSpecial: true,
+          },
+          {
+            id: "task-ai-2",
+            title: "考試準備",
+            duration: 90,
+            timeLabel: "11:00",
+            completed: false,
+            notes: "優先安排高難度工作（90分鐘深度專注）",
+          },
+          {
+            id: "task-ai-3",
+            title: "作品集製作",
+            duration: 90,
+            timeLabel: "14:00",
+            completed: false,
+            notes: "優先安排高難度工作（90分鐘深度專注）",
+          },
+          {
+            id: "task-ai-4",
+            title: "深度研究",
+            duration: 90,
+            timeLabel: "16:00",
+            completed: false,
+            notes: "優先安排高難度工作（90分鐘深度專注）",
+          }
+        ]);
+
+        setTimelineItems([
+          {
+            id: "apply-ai-1",
+            timeRange: "09:00 - 10:30",
+            title: "專注任務：完成專題核心內容",
+            completed: false,
+            isFocusMode: true,
+            description: "高效模式：專注 90 分鐘，休息 15 分鐘。全神貫注攻克硬核框架。",
+          },
+          {
+            id: "apply-ai-2",
+            timeRange: "11:00 - 12:30",
+            title: "專注任務：考試準備",
+            completed: false,
+            isFocusMode: true,
+            description: "高難度挑戰：專注 90 分鐘，深度複習，快速理清盲點。",
+          },
+          {
+            id: "apply-ai-3",
+            timeRange: "14:00 - 15:30",
+            title: "專注任務：作品集製作",
+            completed: false,
+            isFocusMode: true,
+            description: "高能量攻堅：專注 90 分鐘，整合重組核心案例與美感設計。",
+          },
+          {
+            id: "apply-ai-4",
+            timeRange: "16:00 - 17:30",
+            title: "專注任務：深度研究",
+            completed: false,
+            isFocusMode: true,
+            description: "高難度挑戰：專注 90 分鐘，休息 15 分鐘。徹底讀透頂尖最新論文。",
+          },
+          {
+            id: "apply-ai-5",
+            timeRange: "20:30 - 21:00",
+            title: "高效日終總結",
+            completed: false,
+            description: "今日收穫巨大！記錄豐碩碩果，好好犒賞今天的超神狀態。",
+          }
         ]);
       }
     }
@@ -130,6 +397,7 @@ export default function App() {
             tasks={tasks}
             onToggleTask={handleToggleTask}
             onNavigateToTab={(tab) => setActiveTab(tab)}
+            scanResult={scanResult}
           />
         );
       case "timeline":
@@ -138,6 +406,7 @@ export default function App() {
             timelineItems={timelineItems}
             onAddTimelineItem={handleAddTimelineItem}
             onNavigateToTab={(tab) => setActiveTab(tab)}
+            scanResult={scanResult}
           />
         );
       case "scan":
